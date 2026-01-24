@@ -1,0 +1,92 @@
+1️⃣ Create a Dedicated Analytics Schema
+
+CREATE SCHEMA IF NOT EXISTS analytics;
+
+
+2️⃣ Create the analytics.batter_profile VIEW
+🔹 What this view includes
+
+Matches
+Runs, balls, outs
+Average, strike rate
+Phase-wise performance (collapsed into columns)
+Dismissal tendencies (high-level)
+
+CREATE OR REPLACE VIEW analytics.batter_profile AS
+WITH base AS (
+    SELECT
+        batter,
+        COUNT(DISTINCT match_id)                         AS matches,
+        COUNT(*) FILTER (WHERE is_legal_ball)            AS balls,
+        SUM(runs_batter)                                 AS runs,
+        COUNT(*) FILTER (
+            WHERE is_wicket = true
+              AND dismissed_batter = batter
+        )                                                 AS outs
+    FROM deliveries
+    GROUP BY batter
+),
+phase_stats AS (
+    SELECT
+        batter,
+
+        -- Powerplay
+        SUM(runs_batter) FILTER (WHERE phase = 'powerplay') AS pp_runs,
+        COUNT(*) FILTER (WHERE phase = 'powerplay' AND is_legal_ball) AS pp_balls,
+
+        -- Middle
+        SUM(runs_batter) FILTER (WHERE phase = 'middle') AS mid_runs,
+        COUNT(*) FILTER (WHERE phase = 'middle' AND is_legal_ball) AS mid_balls,
+
+        -- Death
+        SUM(runs_batter) FILTER (WHERE phase = 'death') AS death_runs,
+        COUNT(*) FILTER (WHERE phase = 'death' AND is_legal_ball) AS death_balls
+    FROM deliveries
+    GROUP BY batter
+),
+dismissals AS (
+    SELECT
+        batter,
+        COUNT(*) FILTER (WHERE wicket_type = 'caught') AS caught_outs,
+        COUNT(*) FILTER (WHERE wicket_type = 'bowled') AS bowled_outs,
+        COUNT(*) FILTER (WHERE wicket_type = 'lbw')    AS lbw_outs,
+        COUNT(*) FILTER (WHERE wicket_type = 'stumped') AS stumped_outs
+    FROM deliveries
+    WHERE is_wicket = true
+      AND dismissed_batter = batter
+    GROUP BY batter
+)
+SELECT
+    b.batter,
+    b.matches,
+    b.runs,
+    b.balls,
+    b.outs,
+
+    ROUND(b.runs::numeric / NULLIF(b.balls, 0) * 100, 2) AS strike_rate,
+    ROUND(b.runs::numeric / NULLIF(b.outs, 0), 2)        AS average,
+
+    p.pp_runs,
+    p.pp_balls,
+    p.mid_runs,
+    p.mid_balls,
+    p.death_runs,
+    p.death_balls,
+
+    d.caught_outs,
+    d.bowled_outs,
+    d.lbw_outs,
+    d.stumped_outs
+
+FROM base b
+LEFT JOIN phase_stats p USING (batter)
+LEFT JOIN dismissals d USING (batter);
+
+3️⃣ Validate the View
+SELECT *
+FROM analytics.batter_profile
+ORDER BY runs DESC
+LIMIT 10;
+
+
+
