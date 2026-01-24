@@ -30,8 +30,10 @@ def ingest_match(json_path: Path) -> List[Delivery]:
     info = match["info"]
     innings_data = match["innings"]
 
-    match_id = info["event"]["match_number"]
-    season = info["season"]
+    match_id = int(json_path.stem)
+    season_raw = info["season"]
+    season = str(season_raw)
+
     venue = info["venue"]
 
     deliveries: List[Delivery] = []
