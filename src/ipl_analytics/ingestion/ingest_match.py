@@ -38,6 +38,7 @@ def ingest_match(json_path: Path) -> List[Delivery]:
 
     for innings_index, innings in enumerate(innings_data, start=1):
         batting_team = innings["team"]
+        delivery_seq = 0  # resets per innings
 
         for over_data in innings["overs"]:
             over_number = over_data["over"]
@@ -45,6 +46,8 @@ def ingest_match(json_path: Path) -> List[Delivery]:
             legal_ball_counter = 0
 
             for delivery_data in over_data["deliveries"]:
+                delivery_seq += 1
+
                 runs = delivery_data["runs"]
                 extras = delivery_data.get("extras", {})
                 wickets = delivery_data.get("wickets", [])
@@ -63,6 +66,7 @@ def ingest_match(json_path: Path) -> List[Delivery]:
                     innings=innings_index,
                     over=over_number,
                     ball=legal_ball_counter,
+                    delivery_seq=delivery_seq,
                     batting_team=batting_team,
                     bowling_team=None,  # can be inferred later
                     batter=delivery_data["batter"],

@@ -17,7 +17,8 @@ class Delivery(BaseModel):
 
     innings: int
     over: int
-    ball: int
+    ball: int              # legal ball count (1–6)
+    delivery_seq: int      # sequential event number (includes wides/no-balls)
 
     batting_team: str
 
