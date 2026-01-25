@@ -1,0 +1,225 @@
+25th Jan 2026 – IPL Cricket Analytics Platform: Current State
+-----------------------------------------------------------------------------------
+
+📊 Project Status Update — IPL Analytics Platform
+1. Overview
+
+We are building a professional-grade cricket analytics platform focused on IPL ball-by-ball data.
+The goal is to create explainable, decision-ready intelligence for teams, coaches, analysts, and boards — not fantasy or fan-level statistics.
+
+The core philosophy so far has been:
+
+Get the data model right
+
+Build trustworthy analytics primitives
+
+Delay UI/ML until intelligence is solid
+
+2. Current State of the System
+Data Ingestion & Storage
+
+Raw IPL JSON data is ingested at ball-by-ball (delivery) level
+
+Historical schema inconsistencies (season formats, match IDs, missing fields) are normalized at ingestion
+
+Delivery events are stored with:
+
+Legal vs illegal balls
+
+Over, ball, delivery sequence
+
+Match, season, venue
+
+Batter, bowler, non-striker
+
+Phase (powerplay / middle / death)
+
+The ingestion pipeline is:
+
+Idempotent (safe to re-run)
+
+Relationally consistent (players, matches, deliveries)
+
+Cricket-correct (no silent data loss)
+
+Data Scale (Currently Ingested)
+Season	Matches	Deliveries
+2007/08	58	13,489
+2009	57	13,606
+2011	73	17,013
+
+This gives us a multi-season longitudinal dataset, sufficient for serious analysis.
+
+3. Analytics Layer (Core Product)
+
+We have built a dedicated analytics layer on top of raw deliveries using SQL views.
+
+Key Analytics Surfaces
+1. Batter Profile (Career-Wide)
+
+Matches played
+
+Runs, balls, outs
+
+Average and strike rate
+
+Phase-wise performance
+
+Dismissal breakdown (caught, bowled, LBW, stumped)
+
+2. Batter Profile — Season-Aware
+
+One row per (batter, season)
+
+Enables year-on-year comparison
+
+Prevents accidental mixing of seasons
+
+Foundation for trend and evolution analysis
+
+Example use case:
+
+Detect decline vs improvement
+
+Identify role changes over time
+
+Separate one bad season from structural weakness
+
+4. Proven Capability (What the System Can Already Do)
+
+Using the current setup, we can already generate coach- and selector-grade insights, such as:
+
+Batter career trajectory across seasons
+
+Phase-specific strengths and weaknesses
+
+How a batter typically gets out (technical vs risk-based)
+
+Role evolution (e.g., powerplay aggressor → middle-overs anchor)
+
+Early signals of decline or improvement
+
+A real example analysis (SC Ganguly) clearly demonstrated:
+
+Peak effectiveness in 2007/08
+
+Sharp decline in 2009
+
+Loss of powerplay and finishing impact
+
+Persistent dismissal pattern (caught-heavy → aerial risk)
+
+These insights are:
+
+Explainable
+
+Reproducible
+
+Season-aware
+
+Based on ball-level truth
+
+5. What the Product Looks Like Today
+
+At this stage, the product is not a UI-heavy app.
+It is best described as:
+
+A cricket intelligence engine built on a clean event store and explainable analytics.
+
+Architecture Layers
+
+Raw Data Layer
+
+Immutable delivery events
+
+Never directly consumed by end users
+
+Analytics Layer (Main Product)
+
+SQL views encoding cricket logic
+
+Batter profiles, season splits, phase analysis
+
+Interpretation Layer (Emerging)
+
+Trend detection
+
+Role identification
+
+Comparative context
+
+This separation ensures correctness first, polish later.
+
+6. Why This Foundation Is Strong
+
+Correct cricket modeling (rarely done well)
+
+Season-safe analytics (critical for professional use)
+
+No black-box metrics
+
+Every number can be explained to a coach or selector
+
+Easy to extend without reworking fundamentals
+
+This already places the system ahead of most public cricket analytics tools.
+
+7. Planned Evolution (Clear Roadmap)
+Phase 1: Complete Batter Intelligence (Next)
+
+Automated trend flags (improving / declining / stable)
+
+League-average comparisons
+
+Pressure & clutch indicators
+
+Bowler-specific weaknesses
+
+Phase 2: Expand Dimensions
+
+Bowler intelligence profiles
+
+Batter–bowler matchup maps
+
+Venue-adjusted performance
+
+Opposition-specific analysis
+
+Phase 3: Productization
+
+Materialized views for performance
+
+Clean API contracts
+
+Lightweight dashboards / reports
+
+Shareable outputs for teams
+
+Phase 4: Advanced (Optional)
+
+Aging curves
+
+Role clustering
+
+ML-assisted pattern discovery
+(only after intelligence layer is mature)
+
+8. Summary
+
+We have successfully built the hardest part of a cricket analytics product:
+
+A clean, trusted, multi-season event store
+
+An analytics layer that produces real insight, not just stats
+
+The system is now ready to:
+
+Scale across more seasons
+
+Add deeper intelligence
+
+Be productized confidently
+
+Next focus: turning existing analytics into faster signals and comparisons rather than adding new raw data.
+
+------------------------------------------------------------------------------

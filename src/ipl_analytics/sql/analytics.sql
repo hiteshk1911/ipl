@@ -394,7 +394,7 @@ WITH recent_matches AS (
         FROM (
             SELECT DISTINCT match_id
             FROM deliveries
-            WHERE batter = :batter_name
+            WHERE batter = 'MS Dhoni'
         ) m
     ) ranked
     WHERE rn <= 5
@@ -423,7 +423,7 @@ SELECT
         ), 2
     )                                                 AS average
 FROM deliveries
-WHERE batter = :batter_name
+WHERE batter = 'MS Dhoni'
   AND match_id IN (SELECT match_id FROM recent_matches)
 GROUP BY batter;
 
@@ -438,7 +438,7 @@ WITH recent_matches AS (
         FROM (
             SELECT DISTINCT match_id
             FROM deliveries
-            WHERE batter = :batter_name
+            WHERE batter = 'V Kohli'
         ) m
     ) ranked
     WHERE rn <= 5
@@ -457,7 +457,7 @@ SELECT
         * 100, 2
     )                                     AS strike_rate
 FROM deliveries
-WHERE batter = :batter_name
+WHERE batter = 'V Kohli'
   AND match_id IN (SELECT match_id FROM recent_matches)
 GROUP BY phase
 ORDER BY phase;
