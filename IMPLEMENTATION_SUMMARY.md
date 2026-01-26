@@ -79,6 +79,7 @@ src/ipl_analytics/
 
 3. **Batters**
    - `GET /api/v1/batters/{name}/profile` - Complete batter profile
+   - `GET /api/v1/batters/{name}/profile/seasons` - Season-wise batter profile breakdown
    - `GET /api/v1/batters/{name}/recent-form` - Recent form (last N matches)
 
 4. **Matchups**
@@ -168,6 +169,15 @@ poetry run python -m ipl_analytics.api.run
 ### Get Batter Profile
 ```bash
 curl http://localhost:8000/api/v1/batters/V%20Kohli/profile
+```
+
+### Get Batter Profile by Season
+```bash
+# Get all seasons
+curl http://localhost:8000/api/v1/batters/V%20Kohli/profile/seasons
+
+# Get specific season
+curl "http://localhost:8000/api/v1/batters/V%20Kohli/profile/seasons?season=2011"
 ```
 
 ### Get Matchup Analysis

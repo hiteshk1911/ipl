@@ -114,16 +114,20 @@ LIMIT limit OFFSET offset;
 
 ---
 
-### 2.2 Get Batter Season Profile
-**GET** `/batters/{batter_name}/seasons`
+### 2.2 Get Batter Profile by Season
+**GET** `/batters/{batter_name}/profile/seasons`
+
+**Path Parameters:**
+- `batter_name`: Player name (URL encoded, e.g., "V%20Kohli")
 
 **Query Parameters:**
-- `season` (optional): Filter specific season (e.g., "2011")
+- `season` (optional): Filter specific season (e.g., "2011"). If omitted, returns all seasons.
 
 **Response:**
 ```json
 {
   "batter": "V Kohli",
+  "total_seasons": 3,
   "seasons": [
     {
       "season": "2007/08",
@@ -134,9 +138,33 @@ LIMIT limit OFFSET offset;
       "average": 20.63,
       "strike_rate": 137.5,
       "phase_performance": {
-        "powerplay": {"runs": 45, "balls": 30, "strike_rate": 150.0},
-        "middle": {"runs": 80, "balls": 60, "strike_rate": 133.3},
-        "death": {"runs": 40, "balls": 30, "strike_rate": 133.3}
+        "powerplay": {
+          "runs": 45,
+          "balls": 30,
+          "strike_rate": 150.0,
+          "outs": 2,
+          "average": 22.5
+        },
+        "middle": {
+          "runs": 80,
+          "balls": 60,
+          "strike_rate": 133.3,
+          "outs": 4,
+          "average": 20.0
+        },
+        "death": {
+          "runs": 40,
+          "balls": 30,
+          "strike_rate": 133.3,
+          "outs": 2,
+          "average": 20.0
+        }
+      },
+      "dismissals": {
+        "caught": 5,
+        "bowled": 2,
+        "lbw": 1,
+        "stumped": 0
       }
     },
     {
@@ -146,13 +174,41 @@ LIMIT limit OFFSET offset;
       "balls": 180,
       "outs": 10,
       "average": 24.6,
-      "strike_rate": 136.7
+      "strike_rate": 136.7,
+      "phase_performance": {...},
+      "dismissals": {...}
+    },
+    {
+      "season": "2011",
+      "matches": 15,
+      "runs": 639,
+      "balls": 457,
+      "outs": 12,
+      "average": 53.25,
+      "strike_rate": 139.82,
+      "phase_performance": {...},
+      "dismissals": {...}
     }
   ]
 }
 ```
 
-**SQL Backend:** Uses `analytics.batter_profile_season` view
+**Use Cases:**
+- Year-over-year performance comparison
+- Identify trends (improving/declining)
+- Season-specific analysis
+- Role evolution tracking
+
+**SQL Backend:** Uses `analytics.batter_profile_season` view (with fallback to direct query if view doesn't exist)
+
+**Example Requests:**
+```bash
+# Get all seasons
+curl http://localhost:8000/api/v1/batters/V%20Kohli/profile/seasons
+
+# Get specific season
+curl "http://localhost:8000/api/v1/batters/V%20Kohli/profile/seasons?season=2011"
+```
 
 ---
 
@@ -645,15 +701,16 @@ All endpoints return standard error format:
 ### Phase 1 (MVP - Core Functionality)
 1. ✅ `/players` - List players
 2. ✅ `/batters/{name}/profile` - Batter profile
-3. ✅ `/matchups/batter/{batter}/bowler/{bowler}` - Matchup analysis
-4. ✅ `/batters/{name}/recent-form` - Recent form
-5. ✅ `/health` - Health check
+3. ✅ `/batters/{name}/profile/seasons` - Season-wise batter profile
+4. ✅ `/matchups/batter/{batter}/bowler/{bowler}` - Matchup analysis
+5. ✅ `/batters/{name}/recent-form` - Recent form
+6. ✅ `/health` - Health check
 
 ### Phase 2 (Enhanced Analytics)
-6. `/batters/{name}/seasons` - Season breakdown
 7. `/batters/{name}/weaknesses` - Weakness analysis
 8. `/batters/{name}/insights` - Detailed insights
 9. `/matchups/batter/{name}/top-bowlers` - Top matchups
+10. `/batters/{name}/scoring-pattern` - Scoring pattern analysis
 
 ### Phase 3 (Match Context)
 10. `/matches/{id}` - Match info

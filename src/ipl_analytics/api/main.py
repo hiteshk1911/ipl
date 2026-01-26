@@ -23,13 +23,95 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Create FastAPI app
+# Create FastAPI app with enhanced Swagger documentation
 app = FastAPI(
     title=settings.api_title,
     version=settings.api_version,
-    description="Professional-grade IPL cricket analytics API",
+    description="""
+    ## Professional-grade IPL Cricket Analytics API
+    
+    A RESTful API providing comprehensive cricket analytics for IPL matches.
+    Built for professional teams, coaches, analysts, and cricket boards.
+    
+    ### Features
+    
+    * **Batter Analytics**: Career profiles, season breakdowns, recent form, phase-wise performance
+    * **Matchup Analysis**: Head-to-head statistics between batters and bowlers
+    * **Match Context**: Match information, venue statistics, team data
+    * **Player Management**: Search and list players with pagination
+    
+    ### Getting Started
+    
+    1. All endpoints are prefixed with `/api/v1`
+    2. Player names should be URL encoded (e.g., "V Kohli" → "V%20Kohli")
+    3. All responses are in JSON format
+    4. Error responses follow a standard format (see Error Handling section)
+    
+    ### Authentication
+    
+    Currently, the API does not require authentication. This may change in future versions.
+    
+    ### Rate Limiting
+    
+    Rate limiting may be implemented in production. Check response headers for rate limit information.
+    
+    ### Support
+    
+    For issues or questions, please refer to the project documentation or contact the development team.
+    """,
     docs_url="/docs",
-    redoc_url="/redoc"
+    redoc_url="/redoc",
+    openapi_url="/openapi.json",
+    contact={
+        "name": "IPL Analytics API Support",
+        "email": "coderhitesh1911@gmail.com",
+    },
+    license_info={
+        "name": "MIT",
+    },
+    servers=[
+        {
+            "url": "http://localhost:8000",
+            "description": "Development server"
+        },
+        {
+            "url": "https://api.ipl-analytics.com",
+            "description": "Production server (if applicable)"
+        }
+    ],
+    tags_metadata=[
+        {
+            "name": "health",
+            "description": "Health check and system status endpoints"
+        },
+        {
+            "name": "players",
+            "description": "Player management endpoints. Search and list all players in the database."
+        },
+        {
+            "name": "batters",
+            "description": """
+            Batter analytics endpoints. Get comprehensive statistics including:
+            - Career profiles with phase-wise performance
+            - Season-by-season breakdowns
+            - Recent form analysis
+            - Dismissal patterns
+            """
+        },
+        {
+            "name": "matchups",
+            "description": """
+            Matchup analysis endpoints. Analyze head-to-head statistics between:
+            - Batter vs Bowler matchups
+            - Phase-wise breakdowns
+            - Recent encounter history
+            """
+        },
+        {
+            "name": "matches",
+            "description": "Match information endpoints. Get details about specific matches."
+        }
+    ]
 )
 
 # CORS middleware

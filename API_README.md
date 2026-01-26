@@ -107,8 +107,11 @@ poetry run uvicorn ipl_analytics.api.main:app --reload --host 0.0.0.0 --port 800
 
 The API will be available at:
 - **API**: http://localhost:8000
-- **Docs**: http://localhost:8000/docs
-- **ReDoc**: http://localhost:8000/redoc
+- **Swagger UI**: http://localhost:8000/docs (Interactive API documentation)
+- **ReDoc**: http://localhost:8000/redoc (Alternative documentation view)
+- **OpenAPI JSON**: http://localhost:8000/openapi.json (For code generation)
+
+> 💡 **For Frontend Developers**: The Swagger UI provides complete API documentation with interactive testing, request/response examples, and code generation support. See `SWAGGER_DOCUMENTATION.md` for details.
 
 ## API Endpoints
 
@@ -123,6 +126,7 @@ The API will be available at:
 
 #### Batters
 - `GET /api/v1/batters/{batter_name}/profile` - Get complete batter profile
+- `GET /api/v1/batters/{batter_name}/profile/seasons` - Get batter profile broken down by season
 - `GET /api/v1/batters/{batter_name}/recent-form?matches=5` - Get recent form
 
 #### Matchups
@@ -136,6 +140,15 @@ The API will be available at:
 ### Get Batter Profile
 ```bash
 curl http://localhost:8000/api/v1/batters/V%20Kohli/profile
+```
+
+### Get Batter Profile by Season
+```bash
+# Get all seasons
+curl http://localhost:8000/api/v1/batters/V%20Kohli/profile/seasons
+
+# Get specific season
+curl "http://localhost:8000/api/v1/batters/V%20Kohli/profile/seasons?season=2011"
 ```
 
 ### Get Matchup Analysis
@@ -227,43 +240,58 @@ curl http://localhost:8000/api/v1/batters/SC%20Ganguly/profile
 
 ## Extending the API
 
-### Adding a New Endpoint
+The API is designed to be highly extensible. See `EXTENSIBILITY_EXAMPLE.md` for a detailed walkthrough.
 
-1. **Create Repository Method** (if needed)
+### Adding a New Endpoint (Example: Season-Wise Profile)
+
+1. **Create Schema** (Response Model)
+   ```python
+   # schemas/batters.py
+   class SeasonProfile(BaseModel):
+       season: str
+       matches: int
+       runs: int
+       # ... other fields
+   ```
+
+2. **Create Repository Method** (Data Access)
    ```python
    # repositories/batter_repository.py
-   def get_new_metric(self, batter_name: str):
-       query = "SELECT ..."
+   def get_batter_profile_by_season(self, batter_name: str, season: Optional[str] = None):
+       query = "SELECT ... FROM analytics.batter_profile_season WHERE batter = %s"
        return self.execute_query(query, (batter_name,))
    ```
 
-2. **Create Service Method**
+3. **Create Service Method** (Business Logic)
    ```python
    # services/batter_service.py
-   def get_new_metric(self, batter_name: str):
-       data = self.repository.get_new_metric(batter_name)
+   def get_batter_profile_by_season(self, batter_name: str, season: Optional[str] = None):
+       data = self.repository.get_batter_profile_by_season(batter_name, season)
        # Transform/validate data
-       return NewMetricResponse(**data)
+       return BatterSeasonProfileResponse(**data)
    ```
 
-3. **Create Schema**
-   ```python
-   # schemas/batters.py
-   class NewMetricResponse(BaseModel):
-       metric: str
-       value: float
-   ```
-
-4. **Add Route**
+4. **Add Route** (API Endpoint)
    ```python
    # routes/batters.py
-   @router.get("/{batter_name}/new-metric")
-   async def get_new_metric(
+   @router.get("/{batter_name}/profile/seasons")
+   async def get_batter_profile_by_season(
        batter_name: str,
+       season: Optional[str] = Query(None),
        service: BatterService = Depends(get_batter_service)
    ):
-       return service.get_new_metric(batter_name)
+       return service.get_batter_profile_by_season(batter_name, season)
    ```
+
+**That's it!** The new endpoint is automatically documented, type-validated, and error-handled.
+
+### Real Example: Season-Wise Profile
+
+We've already implemented this pattern! See:
+- Schema: `api/schemas/batters.py` → `BatterSeasonProfileResponse`
+- Repository: `repositories/batter_repository.py` → `get_batter_profile_by_season()`
+- Service: `api/services/batter_service.py` → `get_batter_profile_by_season()`
+- Route: `api/routes/batters.py` → `GET /{batter_name}/profile/seasons`
 
 ## Performance Considerations
 
