@@ -1,29 +1,34 @@
-import { View, StyleSheet, ViewStyle } from "react-native";
-import { Colors } from "../../constants/colors";
-import { Spacing } from "../../constants/spacing";
+import { View, StyleSheet, StyleProp, ViewStyle } from "react-native";
+import { useThemeTokens } from "../../src/core/design-system/ThemeContext";
 
 interface CardProps {
   children: React.ReactNode;
-  style?: ViewStyle;
+  style?: StyleProp<ViewStyle>;
 }
 
 export function Card({ children, style }: CardProps) {
-  return <View style={[styles.card, style]}>{children}</View>;
+  const theme = useThemeTokens();
+  const { colors, spacing, radius, shadows } = theme;
+
+  return (
+    <View
+      style={[
+        styles.card,
+        {
+          backgroundColor: colors.surface,
+          borderRadius: radius.md,
+          padding: spacing.md,
+          marginVertical: spacing.sm,
+          ...shadows.md,
+        },
+        style,
+      ]}
+    >
+      {children}
+    </View>
+  );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: Colors.surface,
-    borderRadius: 8,
-    padding: Spacing.md,
-    marginVertical: Spacing.sm,
-    shadowColor: "#000",
-    shadowOffset: {
-      width: 0,
-      height: 2,
-    },
-    shadowOpacity: 0.1,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
+  card: {},
 });

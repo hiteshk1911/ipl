@@ -13,6 +13,7 @@ from ipl_analytics.api.routes import (
     batters,
     matchups,
     matches,
+    seasons,
     health
 )
 
@@ -146,6 +147,7 @@ app.include_router(players.router, prefix=settings.api_prefix)
 app.include_router(batters.router, prefix=settings.api_prefix)
 app.include_router(matchups.router, prefix=settings.api_prefix)
 app.include_router(matches.router, prefix=settings.api_prefix)
+app.include_router(seasons.router, prefix=settings.api_prefix)
 
 
 @app.on_event("startup")
@@ -155,9 +157,10 @@ async def startup_event():
     logger.info(f"API Version: {settings.api_version}")
     logger.info(f"Database: {settings.db_name} @ {settings.db_host}:{settings.db_port}")
     
-    # Initialize database pool if not already done
+    # (Re)initialize database pool at startup so it always uses current config
     try:
         from ipl_analytics.db.pool import DatabasePool
+        DatabasePool.close_all()
         DatabasePool.initialize()
         logger.info("Database connection pool initialized")
     except Exception as e:

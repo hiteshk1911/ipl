@@ -18,7 +18,7 @@ class BatterRepository(BaseRepository):
         Returns:
             Dictionary with batter profile data or None
         """
-        # Try analytics view first, fallback to direct query if view doesn't exist
+        # Try analytics view first, fallback to direct query if view doesn't exist or query raises
         query = """
             SELECT 
                 batter,
@@ -39,11 +39,12 @@ class BatterRepository(BaseRepository):
                 lbw_outs,
                 stumped_outs
             FROM analytics.batter_profile
-            WHERE batter = %s
+            WHERE batter ILIKE %s
         """
-        result = self.execute_query(query, (batter_name,), fetch_one=True)
-        
-        # If view doesn't exist or no result, try direct query
+        try:
+            result = self.execute_query(query, (batter_name,), fetch_one=True)
+        except Exception:
+            result = None
         if not result:
             result = self._get_batter_profile_direct(batter_name)
         
@@ -86,10 +87,10 @@ class BatterRepository(BaseRepository):
                     COUNT(*) FILTER (WHERE is_legal_ball) as balls,
                     SUM(runs_batter) as runs,
                     COUNT(*) FILTER (
-                        WHERE is_wicket = true AND dismissed_batter = %s
+                        WHERE is_wicket = true AND dismissed_batter ILIKE %s
                     ) as outs
                 FROM deliveries
-                WHERE batter = %s
+                WHERE batter ILIKE %s
             ),
             phase_stats AS (
                 SELECT
@@ -100,7 +101,7 @@ class BatterRepository(BaseRepository):
                     SUM(runs_batter) FILTER (WHERE phase = 'death') AS death_runs,
                     COUNT(*) FILTER (WHERE phase = 'death' AND is_legal_ball) AS death_balls
                 FROM deliveries
-                WHERE batter = %s
+                WHERE batter ILIKE %s
             ),
             dismissals AS (
                 SELECT
@@ -109,7 +110,7 @@ class BatterRepository(BaseRepository):
                     COUNT(*) FILTER (WHERE wicket_type = 'lbw') AS lbw_outs,
                     COUNT(*) FILTER (WHERE wicket_type = 'stumped') AS stumped_outs
                 FROM deliveries
-                WHERE is_wicket = true AND dismissed_batter = %s
+                WHERE is_wicket = true AND dismissed_batter ILIKE %s
             )
             SELECT
                 b.batter,
@@ -167,7 +168,7 @@ class BatterRepository(BaseRepository):
                     FROM (
                         SELECT DISTINCT match_id
                         FROM deliveries
-                        WHERE batter = %s
+                        WHERE batter ILIKE %s
                         {season_filter}
                     ) m
                 ) ranked
@@ -206,10 +207,10 @@ class BatterRepository(BaseRepository):
                 SUM(runs_batter) as runs,
                 COUNT(*) FILTER (WHERE is_legal_ball) as balls,
                 COUNT(*) FILTER (
-                    WHERE is_wicket = true AND dismissed_batter = %s
+                    WHERE is_wicket = true AND dismissed_batter ILIKE %s
                 ) as dismissed
             FROM deliveries
-            WHERE batter = %s
+            WHERE batter ILIKE %s
               AND match_id IN ({placeholders})
             GROUP BY match_id, season, venue
             ORDER BY match_id DESC
@@ -259,7 +260,7 @@ class BatterRepository(BaseRepository):
                     match_id,
                     SUM(runs_batter) as runs_batter
                 FROM deliveries
-                WHERE batter = %s
+                WHERE batter ILIKE %s
                 GROUP BY match_id
             ) match_totals
         """
@@ -303,7 +304,7 @@ class BatterRepository(BaseRepository):
                     lbw_outs,
                     stumped_outs
                 FROM analytics.batter_profile_season
-                WHERE batter = %s AND season = %s
+                WHERE batter ILIKE %s AND season = %s
                 ORDER BY season
             """
             params = (batter_name, season)
@@ -329,13 +330,14 @@ class BatterRepository(BaseRepository):
                     lbw_outs,
                     stumped_outs
                 FROM analytics.batter_profile_season
-                WHERE batter = %s
+                WHERE batter ILIKE %s
                 ORDER BY season
             """
             params = (batter_name,)
-        
-        results = self.execute_query(query, params)
-        
+        try:
+            results = self.execute_query(query, params)
+        except Exception:
+            results = None
         if not results:
             # Fallback to direct query if view doesn't exist
             return self._get_batter_profile_by_season_direct(batter_name, season)
@@ -386,7 +388,7 @@ class BatterRepository(BaseRepository):
                             WHERE is_wicket = true AND dismissed_batter = batter
                         ) AS outs
                     FROM deliveries
-                    WHERE batter = %s AND season = %s
+                    WHERE batter ILIKE %s AND season = %s
                     GROUP BY batter, season
                 ),
                 phase_stats AS (
@@ -400,7 +402,7 @@ class BatterRepository(BaseRepository):
                         SUM(runs_batter) FILTER (WHERE phase = 'death') AS death_runs,
                         COUNT(*) FILTER (WHERE phase = 'death' AND is_legal_ball) AS death_balls
                     FROM deliveries
-                    WHERE batter = %s AND season = %s
+                    WHERE batter ILIKE %s AND season = %s
                     GROUP BY batter, season
                 ),
                 dismissals AS (
@@ -414,7 +416,7 @@ class BatterRepository(BaseRepository):
                     FROM deliveries
                     WHERE is_wicket = true
                       AND dismissed_batter = batter
-                      AND batter = %s AND season = %s
+                      AND batter ILIKE %s AND season = %s
                     GROUP BY batter, season
                 )
                 SELECT
@@ -455,7 +457,7 @@ class BatterRepository(BaseRepository):
                             WHERE is_wicket = true AND dismissed_batter = batter
                         ) AS outs
                     FROM deliveries
-                    WHERE batter = %s
+                    WHERE batter ILIKE %s
                     GROUP BY batter, season
                 ),
                 phase_stats AS (
@@ -469,7 +471,7 @@ class BatterRepository(BaseRepository):
                         SUM(runs_batter) FILTER (WHERE phase = 'death') AS death_runs,
                         COUNT(*) FILTER (WHERE phase = 'death' AND is_legal_ball) AS death_balls
                     FROM deliveries
-                    WHERE batter = %s
+                    WHERE batter ILIKE %s
                     GROUP BY batter, season
                 ),
                 dismissals AS (
@@ -483,7 +485,7 @@ class BatterRepository(BaseRepository):
                     FROM deliveries
                     WHERE is_wicket = true
                       AND dismissed_batter = batter
-                      AND batter = %s
+                      AND batter ILIKE %s
                     GROUP BY batter, season
                 )
                 SELECT

@@ -1,6 +1,7 @@
 """
 Service for match-related operations
 """
+from typing import List
 from ipl_analytics.repositories.match_repository import MatchRepository
 from ipl_analytics.api.exceptions import NotFoundError
 from ipl_analytics.api.schemas.matches import MatchInfoResponse
@@ -31,3 +32,7 @@ class MatchService:
             raise NotFoundError("Match", str(match_id))
         
         return MatchInfoResponse(**data)
+
+    def get_available_seasons(self) -> List[str]:
+        """Return distinct seasons that have data, newest first."""
+        return self.repository.get_available_seasons()

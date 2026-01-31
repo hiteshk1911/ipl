@@ -30,7 +30,7 @@ def insert_deliveries(deliveries: Iterable[Delivery]) -> None:
             phase
         )
         VALUES %s
-        ON CONFLICT ON CONSTRAINT deliveries_unique_event DO NOTHING
+        ON CONFLICT (match_id, innings, delivery_seq) DO NOTHING
     """
 
     rows = [
