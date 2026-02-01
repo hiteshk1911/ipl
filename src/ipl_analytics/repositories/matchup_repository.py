@@ -29,8 +29,8 @@ class MatchupRepository(BaseRepository):
         Returns:
             Dictionary with matchup data or None
         """
-        # Build WHERE clause
-        where_clauses = ["batter = %s", "bowler = %s"]
+        # Build WHERE clause (ILIKE for consistency with batter profile and to match stored names regardless of case)
+        where_clauses = ["batter ILIKE %s", "bowler ILIKE %s"]
         params = [batter_name, bowler_name]
         
         if season:
@@ -42,22 +42,40 @@ class MatchupRepository(BaseRepository):
             params.append(venue)
         
         where_sql = " AND ".join(where_clauses)
-        
+        # #region agent log
+        import json, os
+        _log_paths = ["/Users/himankverma/Developer/projects/.cursor/debug.log", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "debug.log"))]
+        _diag = self.execute_query("SELECT current_database(), (SELECT COUNT(*) FROM public.deliveries), (SELECT COUNT(*) FROM public.deliveries WHERE batter ILIKE %s AND bowler ILIKE %s), (SELECT COUNT(*) FILTER (WHERE is_legal_ball) FROM public.deliveries WHERE batter ILIKE %s AND bowler ILIKE %s)", (batter_name, bowler_name, batter_name, bowler_name), fetch_one=True)
+        _line = json.dumps({"location": "matchup_repository.py:get_batter_bowler_matchup", "message": "query params + connection diagnostic", "data": {"batter_name": batter_name, "bowler_name": bowler_name, "current_db": _diag[0] if _diag else None, "total_deliveries_in_public": _diag[1] if _diag else None, "matchup_rows_public": _diag[2] if _diag else None, "matchup_legal_balls_public": _diag[3] if _diag else None}, "timestamp": __import__("time").time() * 1000, "sessionId": "debug-session", "hypothesisId": "H3-H5"}) + "\n"
+        for _p in _log_paths:
+            try:
+                open(_p, "a").write(_line)
+            except Exception:
+                pass
+        # #endregion
         # Overall stats
         overall_query = f"""
             SELECT
                 COUNT(*) FILTER (WHERE is_legal_ball) AS balls_faced,
                 SUM(runs_batter) AS runs,
                 COUNT(*) FILTER (
-                    WHERE is_wicket = true AND dismissed_batter = %s
+                    WHERE is_wicket = true AND dismissed_batter ILIKE %s
                 ) AS outs
-            FROM deliveries
+            FROM public.deliveries
             WHERE {where_sql}
         """
-        params_overall = params + [batter_name]
+        # Order in query: dismissed_batter, batter, bowler [, season] [, venue]
+        params_overall = (batter_name, batter_name) + tuple(params[1:])
         
-        result = self.execute_query(overall_query, tuple(params_overall), fetch_one=True)
-        
+        result = self.execute_query(overall_query, params_overall, fetch_one=True)
+        # #region agent log
+        _line2 = json.dumps({"location": "matchup_repository.py:get_batter_bowler_matchup", "message": "overall query result", "data": {"result_is_none": result is None, "balls": result[0] if result else None, "runs": result[1] if result else None, "outs": result[2] if result else None}, "timestamp": __import__("time").time() * 1000, "sessionId": "debug-session", "hypothesisId": "H3-H5"}) + "\n"
+        for _p in _log_paths:
+            try:
+                open(_p, "a").write(_line2)
+            except Exception:
+                pass
+        # #endregion
         if not result or (result[0] or 0) < 1:
             return None
         
@@ -94,15 +112,15 @@ class MatchupRepository(BaseRepository):
                     COUNT(*) FILTER (WHERE is_legal_ball) AS balls,
                     SUM(runs_batter) AS runs,
                     COUNT(*) FILTER (
-                        WHERE is_wicket = true AND dismissed_batter = %s
+                        WHERE is_wicket = true AND dismissed_batter ILIKE %s
                     ) AS outs
-                FROM deliveries
+                FROM public.deliveries
                 WHERE {where_sql}
                 GROUP BY phase
                 HAVING COUNT(*) FILTER (WHERE is_legal_ball) >= 8
             """
-            phase_params = params + [batter_name]
-            phase_results = self.execute_query(phase_query, tuple(phase_params))
+            phase_params = (batter_name, batter_name) + tuple(params[1:])
+            phase_results = self.execute_query(phase_query, phase_params)
             
             for row in phase_results or []:
                 phase = row[0]
@@ -115,7 +133,7 @@ class MatchupRepository(BaseRepository):
                 matchup_data["phase_breakdown"][phase] = {
                     "runs": phase_runs,
                     "balls": phase_balls,
-                    "dismissals": phase_outs,
+                    "outs": phase_outs,
                     "strike_rate": phase_sr,
                     "average": phase_avg
                 }
@@ -123,7 +141,7 @@ class MatchupRepository(BaseRepository):
         # Recent encounters (last 5 matches)
         recent_query = f"""
             SELECT DISTINCT match_id
-            FROM deliveries
+            FROM public.deliveries
             WHERE {where_sql}
             ORDER BY match_id DESC
             LIMIT 5
@@ -141,11 +159,11 @@ class MatchupRepository(BaseRepository):
                     SUM(runs_batter) as runs,
                     COUNT(*) FILTER (WHERE is_legal_ball) as balls,
                     COUNT(*) FILTER (
-                        WHERE is_wicket = true AND dismissed_batter = %s
+                        WHERE is_wicket = true AND dismissed_batter ILIKE %s
                     ) > 0 as dismissed
-                FROM deliveries
-                WHERE batter = %s
-                  AND bowler = %s
+                FROM public.deliveries
+                WHERE batter ILIKE %s
+                  AND bowler ILIKE %s
                   AND match_id IN ({placeholders})
                 GROUP BY match_id, season
                 ORDER BY match_id DESC

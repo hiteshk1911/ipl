@@ -1,7 +1,7 @@
 """
 Repository for match data access
 """
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, List
 from ipl_analytics.repositories.base import BaseRepository
 
 
@@ -42,3 +42,13 @@ class MatchRepository(BaseRepository):
         query = "SELECT EXISTS(SELECT 1 FROM matches WHERE match_id = %s)"
         result = self.execute_query(query, (match_id,), fetch_one=True)
         return result[0] if result else False
+
+    def get_available_seasons(self) -> List[str]:
+        """Return distinct seasons from deliveries (same table as matchup/batter stats), newest first."""
+        query = """
+            SELECT DISTINCT season
+            FROM deliveries
+            ORDER BY season DESC
+        """
+        rows = self.execute_query(query, (), fetch_one=False)
+        return [row[0] for row in rows] if rows else []

@@ -1,0 +1,43 @@
+# Render Blueprint: IPL Analytics backend + Postgres
+# https://docs.render.com/blueprint-spec
+
+databases:
+  - name: ipl-analytics-db
+    databaseName: ipl_analytics
+    plan: free
+    region: oregon
+
+services:
+  - type: web
+    runtime: python
+    name: ipl-analytics-api
+    region: oregon
+    plan: free
+
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m ipl_analytics.api.run
+    healthCheckPath: /api/v1/health
+
+    envVars:
+      - key: PYTHONPATH
+        value: src
+      - key: DB_HOST
+        fromDatabase:
+          name: ipl-analytics-db
+          property: host
+      - key: DB_PORT
+        fromDatabase:
+          name: ipl-analytics-db
+          property: port
+      - key: DB_USER
+        fromDatabase:
+          name: ipl-analytics-db
+          property: user
+      - key: DB_PASSWORD
+        fromDatabase:
+          name: ipl-analytics-db
+          property: password
+      - key: DB_NAME
+        fromDatabase:
+          name: ipl-analytics-db
+          property: database

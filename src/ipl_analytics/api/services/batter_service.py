@@ -164,7 +164,14 @@ class BatterService:
         
         seasons_data = self.repository.get_batter_profile_by_season(batter_name, season)
         
+        # When filtering by season, empty result means "no data for this season", not "batter not found"
         if not seasons_data:
+            if season:
+                return BatterSeasonProfileResponse(
+                    batter=batter_name,
+                    seasons=[],
+                    total_seasons=0
+                )
             raise NotFoundError("Batter", batter_name)
         
         seasons = []

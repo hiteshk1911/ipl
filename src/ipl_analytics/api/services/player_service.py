@@ -66,5 +66,13 @@ class PlayerService:
         Raises:
             NotFoundError if player doesn't exist
         """
-        if not self.repository.player_exists(player_name):
+        # #region agent log
+        import json, os
+        _exists = self.repository.player_exists(player_name)
+        _line = json.dumps({"location": "player_service.py:validate_player_exists", "message": "player_exists check", "data": {"player_name": player_name, "exists": _exists}, "timestamp": __import__("time").time() * 1000, "sessionId": "debug-session", "hypothesisId": "H1"}) + "\n"
+        for _p in ["/Users/himankverma/Developer/projects/.cursor/debug.log", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "debug.log"))]:
+            try: open(_p, "a").write(_line)
+            except Exception: pass
+        # #endregion
+        if not _exists:
             raise NotFoundError("Player", player_name)

@@ -25,6 +25,14 @@ async def get_batter_bowler_matchup(
     """
     Get batter vs bowler matchup analysis with phase breakdown and recent encounters
     """
+    # #region agent log
+    import json, os
+    _line = json.dumps({"location": "matchups.py:get_batter_bowler_matchup", "message": "route received", "data": {"batter_name": batter_name, "bowler_name": bowler_name, "batter_repr": repr(batter_name), "bowler_repr": repr(bowler_name)}, "timestamp": __import__("time").time() * 1000, "sessionId": "debug-session", "hypothesisId": "H2"}) + "\n"
+    for _p in ["/Users/himankverma/Developer/projects/.cursor/debug.log", os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "..", "..", "debug.log"))]:
+        try:
+            with open(_p, "a") as _f: _f.write(_line)
+        except Exception: pass
+    # #endregion
     return service.get_batter_bowler_matchup(
         batter_name,
         bowler_name,

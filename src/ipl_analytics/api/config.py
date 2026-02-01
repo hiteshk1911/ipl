@@ -1,8 +1,14 @@
 """
 Configuration management for the API
 """
+import os
 from pydantic_settings import BaseSettings
 from typing import Optional
+
+
+def _default_db_user() -> str:
+    """Default to current OS user so Postgres connects without extra config."""
+    return os.environ.get("USER", "postgres")
 
 
 class Settings(BaseSettings):
@@ -10,7 +16,7 @@ class Settings(BaseSettings):
     
     # Database settings
     db_name: str = "ipl_analytics"
-    db_user: str = "hitesh"
+    db_user: str = _default_db_user()
     db_password: Optional[str] = None
     db_host: str = "localhost"
     db_port: int = 5432

@@ -6,7 +6,7 @@ authors = [
     {name = "Hitesh Kumar",email = "coderhitesh1911@gmail.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.14"
+requires-python = ">=3.12"
 dependencies = [
     "pandas (>=3.0.0,<4.0.0)",
     "psycopg2-binary (>=2.9.11,<3.0.0)",
